@@ -5,9 +5,10 @@ import requests
 import time
 import os
 import base64
+import random
 
 port=8000#порт 
-dictoru='file'#нуть к папке с файлами
+dictoru='file'#путь к папке с файлами
 data={}
 
 # uvicorn main:app --reload
@@ -38,20 +39,24 @@ app = FastAPI()
 class Item(BaseModel):
     key: str
 
-# Обработка GET-запроса
+
 @app.post('/')
 def handle_get():
-    return {'info': f"ip:{get_local_ip()},port:{port}"}
+    # key нужен для проверки на коректность сервера
+    return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10)}
 
-
-@app.get('/data')
+# Обработка GET-запроса
+@app.get('/file')
 def handle_get():
-    for file_data in os.listdir(dictoru):  # Используем абсолютный путь
-        file_path = os.path.join(dictoru, file_data)
-        if os.path.isfile(file_path):  # Проверяем, что это файл
-            with open(file_path, 'rb') as file:  # Читаем файл как текст
-                data[file_data] = base64.b64encode(file.read()).decode('utf-8')
-    return {'message': file_data, 'data': data}
+    return list(os.listdir(dictoru))
+# Обработка GET-запроса
+@app.get('/data')
+def handle_get(file:str):
+    file_path = os.path.join(dictoru, file)
+    if os.path.isfile(file_path):  # Проверяем, что это файл
+        with open(file_path, 'rb') as file:  # Читаем файл как bin
+            data = base64.b64encode(file.read()).decode('utf-8')
+    return {'message': file, 'data': data}
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn
