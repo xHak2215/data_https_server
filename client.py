@@ -7,6 +7,7 @@ mein_ulr='http://localhost:8000/'#URL сервера или же IP
 
 url = f'{mein_ulr}data'
 info_url = f'{mein_ulr}'
+file_list=f'{mein_ulr}file'
 
 def ping(ping_url)->int:
     start_time = time.time()
@@ -30,29 +31,34 @@ print(f"ping>>>{ping(url)}")
 info_data = {'key': 'value'}
 info = requests.post(info_url, json=info_data)
 # Вывод POST-ответа
-print('POST response:', info.json())
+print('info:', info.json())
+#проверка сервера на коректность
+if info.json()['key']>10 or info.json()['key']<0:
+    print('error server key conecting')
+    time.sleep(1)
+    exit('error server key conecting')
+    
 # GET-запрос с параметрами
 params = {'key': 'value'}
-response = requests.get(url, params=params)
 
-# Вывод результатов
-data = response.json()  # Получаем данные из GET-запроса
-
+response = requests.get(file_list, params=params)
+files = response.json()  # Получаем данные из GET-запроса
 # Обработка данных
-if 'data' in data:  # Проверяем, есть ли ключ 'data' в ответе
-    files = data['data']  # Получаем словарь с файлами
-    print("Available files:", list(files.keys()))
-
-    # Запрос имени файла для загрузки
-    file_download = input('file download >> ')
-    if file_download in files:  # Проверяем, существует ли файл
-        # Запись содержимого файла
-        file_content = base64.b64decode(data['data'][file_download])
-        with open(file_download, 'wb') as f:
-            f.write(file_content)
-        print(f"File '{file_download}' downloaded successfully.")
-    else:
-        print(f"File '{file_download}' not found.") 
+#if 'data' in data:  # Проверяем, есть ли ключ 'data' в ответе
+#    files = data['data']  # Получаем словарь с файлами
+print('list file:')
+for i in range(0,len(list(files))):
+    print(list(files)[i])
+# Запрос имени файла для загрузки
+file_download = input('file download >>')
+params = {'file': file_download}
+bute = requests.get(url, params=params).json()
+if file_download in files:  # Проверяем, существует ли файл
+    # Запись содержимого файла
+    file_content = base64.b64decode(bute['data'])
+    with open(file_download, 'wb') as f:
+        f.write(file_content)
+    print(f"File {bute['message']} downloaded successfully.")
 else:
-    print("No files available in the response.")
+    print('key data not found')
 
