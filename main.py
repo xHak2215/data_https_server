@@ -10,6 +10,7 @@ import random
 port=8000#порт 
 dictoru='file'#путь к папке с файлами
 data={}
+message='hello'
 
 # uvicorn main:app --reload
 def get_local_ip():
@@ -43,7 +44,7 @@ class Item(BaseModel):
 @app.post('/')
 def handle_get():
     # key нужен для проверки на коректность сервера
-    return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10)}
+    return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}
 
 # Обработка GET-запроса
 @app.get('/file')
@@ -60,4 +61,4 @@ def handle_get(file:str):
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host=get_local_ip(), port=port)
+    uvicorn.run(app, host='0.0.0.0', port=port)
