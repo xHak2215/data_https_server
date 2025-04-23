@@ -1,9 +1,11 @@
 import requests
 import time
 import base64
+import tpg
 
 # URL сервера
-mein_ulr='http://localhost:8000/'#URL сервера или же IP
+mein_ulr='http://26.238.36.134:8000/'#URL сервера или же IP
+
 
 url = f'{mein_ulr}data'
 info_url = f'{mein_ulr}'
@@ -46,11 +48,9 @@ files = response.json()  # Получаем данные из GET-запроса
 # Обработка данных
 #if 'data' in data:  # Проверяем, есть ли ключ 'data' в ответе
 #    files = data['data']  # Получаем словарь с файлами
-print('list file:')
-for i in range(0,len(list(files))):
-    print(list(files)[i])
-# Запрос имени файла для загрузки
-file_download = input('file download >>')
+
+file_download =tpg.listgr(files,title=info.json()['message'])
+
 params = {'file': file_download}
 bute = requests.get(url, params=params).json()
 if file_download in files:  # Проверяем, существует ли файл
