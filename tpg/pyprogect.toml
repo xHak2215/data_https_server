@@ -1,0 +1,21 @@
+[build-system]
+requires = ["poetry-core>=2.1.1"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "gpr"
+version = "1.0.0"
+description = "легкая библиотека для работы с псевдо графикой в терминале"
+authors = ["hit<@HITHELL.com>"]
+license = "MIT"
+repository ="https://github.com/"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+keyboard = {version = "0.13.5", allow-prereleases = true}
+
+[tool.poetry.dev-dependencies]
+pytest = "^4.6"
+
+[tool.poetry.extras]
+docs = ["sphinx"]
