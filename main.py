@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 import socket
 import requests
 import time
@@ -8,7 +10,7 @@ import base64
 import random
 
 port=8000#порт 
-dictoru='file'#путь к папке с файлами
+dictoru=os.getcwd()+'\\file'#путь к папке с файлами
 data={}
 message='hello'
 
@@ -39,9 +41,11 @@ app = FastAPI()
 # Модель данных для POST-запроса
 class Item(BaseModel):
     key: str
+    
+print('host direktoru>>',dictoru)
+print(f'server IP >{get_local_ip()}:{port}')
 
-
-@app.post('/')
+@app.post('/api')
 def handle_get():
     # key нужен для проверки на коректность сервера
     return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}
@@ -50,7 +54,42 @@ def handle_get():
 @app.get('/file')
 def handle_get():
     return list(os.listdir(dictoru))
-# Обработка GET-запроса
+@app.get('/', response_class=HTMLResponse)
+async def handle_get():
+    return f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>server</title>
+        </head>
+        <body>
+            <h1>conect</h1>
+            <h2>для скачивания файлов нужен клиент скачайте его тут:</h2>
+            <h2>To download files, you need a client download it here:</h2>
+            <a href="http://{get_local_ip()}:{port}/client" a>download</a>
+        </body>
+    </html>
+
+    """
+app.mount("/bin", StaticFiles(directory="bin"), name="bin")
+@app.get("/client", response_class=HTMLResponse)
+async def read_root():
+    return f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>client download</title>
+        </head>
+        <body>
+            <h1>client download</h1>
+            <h2>для запуска нужен python и библиотека requests</h2>
+            <h2>You need Python and the REQUESTS library for launch</h2>
+            
+            <a href="bin/local_data_client.zip" download>Download code</a><br>
+            <a href="bin/client.exe" download>Download exe file for Windows</a>
+        </body>
+    </html>
+    """
 @app.get('/data')
 def handle_get(file:str):
     file_path = os.path.join(dictoru, file)
