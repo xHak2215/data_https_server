@@ -20,6 +20,11 @@ def get_local_ip():
     local_ip = socket.gethostbyname(hostname)
     return local_ip
 
+def text_to_binary(text, encoding='utf-8'):
+    #Преобразует текст в двоичную строку (последовательность '0' и '1')
+    binary_data = ''.join(format(byte, '08b') for byte in text.encode(encoding))
+    return binary_data
+
 def ping(ping_url)->int:
     start_time = time.time()
     try:
@@ -43,12 +48,12 @@ class Item(BaseModel):
     key: str
     
 print('host direktoru>>',dictoru)
-print(f'server IP >{get_local_ip()}:{port}')
+print(f'server IP >http://{get_local_ip()}:{port}')
 
 @app.post('/api')
 def handle_get():
     # key нужен для проверки на коректность сервера
-    return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}
+    return text_to_binary(str({'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}))
 
 # Обработка GET-запроса
 @app.get('/file')
