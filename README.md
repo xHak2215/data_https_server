@@ -2,7 +2,18 @@
 <h2>нстройка/settings</h2>
 <h3>settings.json</h3>
 
-
+```json
+ {
+    "port":8000,
+    "dictoru":"file",
+    "message":"test message",
+    "host_file_On_the_site":true 
+}
+```
+<h4>port - может быть любым в пределах стандарта (от 0001 до 9999)</h4>
+<h4>dictoru - директория с файлами для хостинга должна храниться вместе с сервером</h4>
+<h4>message - сообщение передающиеся на клиент</h4>
+<h4>host_file_On_the_site - будет ли на корневой странице сервера сайт с списком файлов которые моно скачать </h4><br>
 <h3>description_file.json</h3>
 
 ```json
