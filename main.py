@@ -8,12 +8,28 @@ import time
 import os
 import base64
 import random
+import json
+settings=''
+try:
+    with open("settings.json", "r") as json_settings:
+        settings= json.load(json_settings)
+    print(settings)
+    port=int(settings['port'])
+    dictoru=str(os.getcwd()+'\\'+settings["dictoru"])
+    message=str(settings["message"])
+    host_file_On_the_site=bool(settings['host_file_On_the_site'])
+except Exception as e: 
+    print('error import settngs')
+    print(f'error>>\n{e}')
+    port=8000#порт 
+    dictoru=os.getcwd()+'\\file'#путь к папке с файлами
+    message='hello'
+    host_file_On_the_site=True# возможность качать файлы с сайта без клиента 
 
-port=8000#порт 
-dictoru=os.getcwd()+'\\file'#путь к папке с файлами
 data={}
-message='hello'
-
+if os.path.isdir(dictoru) != True:
+    print('\33[32m'+f'error no {dictoru}')
+     
 # uvicorn main:app --reload
 def get_local_ip():
     hostname = socket.gethostname()
@@ -59,22 +75,50 @@ def handle_get():
 @app.get('/file')
 def handle_get():
     return list(os.listdir(dictoru))
+app.mount('/'+settings["dictoru"], StaticFiles(directory=settings["dictoru"]), name="file_dir")
 @app.get('/', response_class=HTMLResponse)
 async def handle_get():
-    return f"""
-    <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>server</title>
-        </head>
-        <body>
-            <h1>conect</h1>
-            <h2>для скачивания файлов нужен клиент скачайте его тут:</h2>
-            <h2>To download files, you need a client download it here:</h2>
-            <a href="http://{get_local_ip()}:{port}/client" a>download</a>
-        </body>
-    </html>
-
+    if host_file_On_the_site:
+        file_no_the_site=''
+        description='no description'
+        try:
+            with open("description_file.json", "r") as json_settings:
+                description_file=json.load(json_settings)
+        except FileNotFoundError:
+            description_file=None
+        for i in os.listdir(dictoru):
+            if description_file is not None:
+                try:
+                    description=f'<h3>{description_file[i]}</h3>'
+                except KeyError:
+                    description='no description'
+            file_no_the_site+=f'<a href="{settings["dictoru"]}/{i}" download>Download {i}</a><br>\n{description}<br>'
+        return f"""
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>server</title>
+            </head>
+            <body>
+                <h1>conect</h1>
+                {file_no_the_site}
+            </body>
+        </html>
+    """
+    else:    
+        return f"""
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>server</title>
+            </head>
+            <body>
+                <h1>conect</h1>
+                <h2>для скачивания файлов нужен клиент скачайте его тут:</h2>
+                <h2>To download files, you need a client download it here:</h2>
+                <a href="http://{get_local_ip()}:{port}/client" a>download</a>
+            </body>
+        </html>
     """
 app.mount("/bin", StaticFiles(directory="bin"), name="bin")
 @app.get("/client", response_class=HTMLResponse)
