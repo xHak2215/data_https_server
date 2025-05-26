@@ -25,6 +25,7 @@ except Exception as e:
     dictoru=os.getcwd()+'\\file'#путь к папке с файлами
     message='hello'
     host_file_On_the_site=True# возможность качать файлы с сайта без клиента 
+    settings={"dictoru":"file"}
 
 data={}
 if os.path.isdir(dictoru) != True:
@@ -145,8 +146,8 @@ def handle_get(file:str):
     if os.path.isfile(file_path):  # Проверяем, что это файл
         with open(file_path, 'rb') as file:  # Читаем файл как bin
             data = base64.b64encode(file.read()).decode('utf-8')
-    return {'message': file, 'data': data}
+    return {'message': file, 'data': data ,"Content-Length": str(os.path.getsize(file_path) + 1)}
 # Запуск сервера
 if __name__ == '__main__':
-    import uvicorn
+    import uvicorn 
     uvicorn.run(app, host='0.0.0.0', port=port)
