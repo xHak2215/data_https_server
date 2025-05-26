@@ -76,13 +76,21 @@ try:
     params = {'file': file_download}
     bute = requests.get(url, params=params).json()
     if file_download in files:  # Проверяем, существует ли файл
-        # Запись содержимого файла
+        total_size = int(response.headers.get('content-length', 0))
+        total_bytes=0
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                total_bytes += len(chunk)
+                percent = (total_bytes / total_size) * 100 if total_size > 0 else 0
+                
+                print(f"{percent:.1f}% ({total_bytes} / {total_size} байт)")
+            # Запись содержимого файла
         file_content = base64.b64decode(bute['data'])
         with open(file_download, 'wb') as f:
             f.write(file_content)
-        print(f"File {bute['message']} downloaded successfully.")
+        print(f"File {file_download} downloaded successfully.")
     else:
-        print('key data not found')
+        print('file not found')
 except Exception as e:
     print('error>\n'+traceback.format_exc()+'\n')
     input('press enter to exit')
