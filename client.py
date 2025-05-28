@@ -1,11 +1,12 @@
 import requests
+import tpg
+
 import time
 import base64
-import tpg
 import traceback
+import os
+import bz2
 
-# URL сервера
-#mein_ulr='http://26.238.36.134:8000/'#URL сервера или же IP
 
 mein_ulr=input('IP server>>')
 
@@ -64,34 +65,50 @@ try:
                     exit('error server key conecting')
             else:
                 break
+
+    list_response = requests.get(file_list, params={'key': 'value'})
+    list_response.raise_for_status()  # Проверяем HTTP-ошибки
+    files = list_response.json()
     
-    # GET-запрос с параметрами
-    params = {'key': 'value'}
+    if not isinstance(files, list):
+        raise ValueError("Сервер вернул не список файлов")
 
-    response = requests.get(file_list, params=params)
-    files = response.json()  # Получаем данные из GET-запроса
+    # 2. Выбираем файл для загрузки
+    file_download = tpg.listgr(files, title=info['message'])
+    if file_download not in files:
+        raise ValueError("Файл не найден в списке")
 
-    file_download =tpg.listgr(files,title=info['message'])
+    # 3. Загружаем файл с прогресс-баром
+    SAFE_DIR = "downloads"
+    os.makedirs(SAFE_DIR, exist_ok=True)
+    file_path = os.path.join(SAFE_DIR, file_download)
 
-    params = {'file': file_download}
-    bute = requests.get(url, params=params).json()
-    if file_download in files:  # Проверяем, существует ли файл
-        total_size = int(response.headers.get('content-length', 0))
-        total_bytes=0
-        for chunk in response.iter_content(chunk_size=8192):
+    download_response = requests.get(url, params={'file': file_download}, stream=True)
+    download_response.raise_for_status()
+
+    total_size = int(download_response.headers.get('content-length', 0))
+    
+    total_bytes=0
+    with open(file_path, 'wb') as f:
+        timer=time.time()
+        for chunk in download_response.iter_content(chunk_size=8192):
             if chunk:
                 total_bytes += len(chunk)
                 percent = (total_bytes / total_size) * 100 if total_size > 0 else 0
-                
-                print(f"{percent:.1f}% ({total_bytes} / {total_size} байт)")
-            # Запись содержимого файла
-        file_content = base64.b64decode(bute['data'])
-        with open(file_download, 'wb') as f:
-            f.write(file_content)
-        print(f"File {file_download} downloaded successfully.")
-    else:
-        print('file not found')
+                i = round(20 * (percent / 100))
+                if percent >= 100:
+                   progress_bar=f'[    successfully    ] {round(timer-time.time()/1000) if timer-time.time() < 1000 else 1 }s.'
+                else:
+                    progress_bar=f"[{'#'*i}{' '*(20-i)}]"
+                print(f"{progress_bar}{percent:.1f}% ({total_bytes} / {total_size} байт)")
+                # Распаковка
+                f.write(base64.b64decode(chunk))
+                tpg.clear()
+    
+    print(f"Файл {file_download} успешно загружен.")
+
 except Exception as e:
-    print('error>\n'+traceback.format_exc()+'\n')
-    input('press enter to exit')
+    print(f"Ошибка: {e}")
+    print(traceback.format_exc())
+    input('Нажмите Enter для выхода...')
 
