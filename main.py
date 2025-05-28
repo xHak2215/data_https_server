@@ -1,14 +1,21 @@
+import time
+import os
+import requests
+import base64
+import random
+import json
+
+
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 import socket
-import requests
-import time
-import os
-import base64
-import random
-import json
+
+
+
+
 settings=''
 try:
     with open("settings.json", "r") as json_settings:
@@ -65,7 +72,7 @@ class Item(BaseModel):
     key: str
     
 print('host direktoru>>',dictoru)
-print(f'server IP >http://{get_local_ip()}:{port}')
+print(f'server IP > http://{get_local_ip()}:{port}')
 
 @app.post('/api')
 def handle_get():
@@ -140,13 +147,26 @@ async def read_root():
         </body>
     </html>
     """
-@app.get('/data')
-def handle_get(file:str):
+    
+def read_data(file):
     file_path = os.path.join(dictoru, file)
-    if os.path.isfile(file_path):  # Проверяем, что это файл
-        with open(file_path, 'rb') as file:  # Читаем файл как bin
-            data = base64.b64encode(file.read()).decode('utf-8')
-    return {'message': file, 'data': data ,"Content-Length": str(os.path.getsize(file_path) + 1)}
+    if os.path.isfile(file_path):
+        with open(file_path, 'rb') as f:
+            while chunk := f.read(4096):
+                yield base64.b64encode(chunk).decode('utf-8')
+
+@app.get('/data')
+async def handle_get(file: str):
+    return StreamingResponse(
+        read_data(file),
+        media_type="application/octet-stream",
+        headers={
+            "Transfer-Encoding": "chunked"
+          #  "Content-Length": str(os.path.getsize(dictoru +'\\'+ file)),
+
+        }
+    )
+    # {'message': file,"Content-Length": os.path.getsize(file_path) + 1}
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn 
