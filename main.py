@@ -4,6 +4,7 @@ import requests
 import base64
 import random
 import json
+import traceback
 
 
 from fastapi import FastAPI, Request
@@ -14,29 +15,27 @@ from fastapi.responses import StreamingResponse
 import socket
 
 
-
-
 settings=''
 try:
     with open("settings.json", "r") as json_settings:
         settings= json.load(json_settings)
     print(settings)
     port=int(settings['port'])
-    dictoru=str(os.getcwd()+'\\'+settings["dictoru"])
+    dictoru=os.path.join(os.getcwd(),settings["dictoru"])
     message=str(settings["message"])
     host_file_On_the_site=bool(settings['host_file_On_the_site'])
 except Exception as e: 
     print('error import settngs')
-    print(f'error>>\n{e}')
+    print(f"error>> {e} \n{traceback.format_exc()}")
     port=8000#порт 
-    dictoru=os.getcwd()+'\\file'#путь к папке с файлами
+    dictoru=os.path.join(os.getcwd(),'file')#путь к папке с файлами
     message='hello'
     host_file_On_the_site=True# возможность качать файлы с сайта без клиента 
     settings={"dictoru":"file"}
 
 data={}
 if os.path.isdir(dictoru) != True:
-    print('\33[32m'+f'error no {dictoru}')
+    print('\33[31m'+f'error no {dictoru}')
      
 # uvicorn main:app --reload
 def get_local_ip():
@@ -55,10 +54,10 @@ def ping(ping_url)->int:
         try:
             k=requests.get(ping_url)
             s=k.status_code
-            if s== 200:
+            if s == 200:
                 pass
             else:
-                return "not"
+                return s
         except requests.exceptions.InvalidURL:
             return f"Invalid url >> {ping_url}"
     except requests.exceptions.ConnectionError: return "not connect"
@@ -106,9 +105,10 @@ async def handle_get():
             <head>
                 <meta charset="UTF-8">
                 <title>server</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
             </head>
             <body>
-                <h1>conect</h1>
+                <h1>connect</h1>
                 {file_no_the_site}
             </body>
         </html>
@@ -119,9 +119,10 @@ async def handle_get():
             <head>
                 <meta charset="UTF-8">
                 <title>server</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
             </head>
             <body>
-                <h1>conect</h1>
+                <h1>connect </h1>
                 <h2>для скачивания файлов нужен клиент скачайте его тут:</h2>
                 <h2>To download files, you need a client download it here:</h2>
                 <a href="http://{get_local_ip()}:{port}/client" a>download</a>
@@ -136,14 +137,15 @@ async def read_root():
         <head>
             <meta charset="UTF-8">
             <title>client download</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
         </head>
         <body>
             <h1>client download</h1>
             <h2>для запуска нужен python и библиотека requests</h2>
-            <h2>You need Python and the REQUESTS library for launch</h2>
+            <h2>You need Python and the requests library for launch</h2>
             
             <a href="bin/local_data_client.zip" download>Download code</a><br>
-            <a href="bin/client.exe" download>Download exe file for Windows</a>
+            <a href="bin/client.exe" download>Download exe file for Windows</a><br>
         </body>
     </html>
     """
@@ -162,7 +164,7 @@ async def handle_get(file: str):
         media_type="application/octet-stream",
         headers={
             "Transfer-Encoding": "chunked"
-          #  "Content-Length": str(os.path.getsize(dictoru +'\\'+ file)),
+          #  "Content-Length": str(os.path.getsize(os.path.join(os.getcwd(),dictoru,'file'))),
 
         }
     )
@@ -170,4 +172,4 @@ async def handle_get(file: str):
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn 
-    uvicorn.run(app, host='0.0.0.0', port=port)
+    uvicorn.run(app, host=get_local_ip(), port=port)
