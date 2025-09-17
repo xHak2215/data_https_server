@@ -135,26 +135,6 @@ async def handle_get():
             </body>
         </html>
     """
-app.mount("/bin", StaticFiles(directory="bin"), name="bin")
-@app.get("/client", response_class=HTMLResponse)
-async def read_root():
-    return f"""
-    <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>client download</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-        </head>
-        <body>
-            <h1>client download</h1>
-            <h2>для запуска нужен python и библиотека requests</h2>
-            <h2>You need Python and the requests library for launch</h2>
-            
-            <a href="bin/local_data_client.zip" download>Download code</a><br>
-            <a href="bin/client.exe" download>Download exe file for Windows</a><br>
-        </body>
-    </html>
-    """
     
 @app.get("/upload", response_class=HTMLResponse)
 async def main():
