@@ -2,3 +2,4 @@ fastapi==0.115.12
 uvicorn==0.34.2
 requests==2.32.3
 sockets==1.0.0
+python-multipart

@@ -156,7 +156,7 @@ async def read_root():
     </html>
     """
     
-@app.get("/", response_class=HTMLResponse)
+@app.get("/upload", response_class=HTMLResponse)
 async def main():
     content = """
     <html>
