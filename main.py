@@ -116,6 +116,9 @@ async def handle_get():
             <body>
                 <h1>connect</h1>
                 {file_no_the_site}
+
+
+                <a href="/upload">upload file</a>
             </body>
         </html>
     """
@@ -129,9 +132,8 @@ async def handle_get():
             </head>
             <body>
                 <h1>connect </h1>
-                <h2>для скачивания файлов нужен клиент скачайте его тут:</h2>
-                <h2>To download files, you need a client download it here:</h2>
-                <a href="http://{get_local_ip()}:{port}/client" a>download</a>
+                <h2>для скачивания файлов нужен клиент</h2>
+
             </body>
         </html>
     """
@@ -185,4 +187,4 @@ async def handle_get(file: str):
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn 
-    uvicorn.run(app, host=get_local_ip(), port=port)
+    uvicorn.run(app, host='0.0.0.0', port=port)
