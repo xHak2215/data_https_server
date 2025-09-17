@@ -7,7 +7,7 @@ import json
 import traceback
 
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile, HTTPException
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -80,8 +80,14 @@ def handle_get():
 
 # Обработка GET-запроса
 @app.get('/file')
-def handle_get():
-    return list(os.listdir(dictoru))
+async def handle_get():
+    try:
+        file_list = os.listdir(dictoru)
+        file_sizes = {f: os.path.getsize(os.path.join(dictoru, f)) for f in file_list}
+        return {"file_list": file_sizes}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 app.mount('/'+settings["dictoru"], StaticFiles(directory=settings["dictoru"]), name="file_dir")
 @app.get('/', response_class=HTMLResponse)
 async def handle_get():
@@ -150,6 +156,34 @@ async def read_root():
     </html>
     """
     
+@app.get("/", response_class=HTMLResponse)
+async def main():
+    content = """
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>File Upload</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+        </head>
+        <body>
+            <h1>Upload a File</h1>
+            <form action="/uploadfile/" enctype="multipart/form-data" method="post">
+                <input name="file" type="file">
+                <input type="submit">
+            </form>
+        </body>
+    </html>
+    """
+    return content
+
+@app.post("/uploadfile/")
+async def upload_file(file: UploadFile = File(...)):
+    file_location = os.path.join(dictoru , file.filename)
+    with open(file_location, "wb") as f:
+        f.write(await file.read())
+    return {"info": f"file '{file.filename}' saved at '{file_location}'"}
+    
+    
 def read_data(file):
     file_path = os.path.join(dictoru, file)
     if os.path.isfile(file_path):
@@ -164,7 +198,6 @@ async def handle_get(file: str):
         media_type="application/octet-stream",
         headers={
             "Transfer-Encoding": "chunked"
-          #  "Content-Length": str(os.path.getsize(os.path.join(os.getcwd(),dictoru,'file'))),
 
         }
     )
