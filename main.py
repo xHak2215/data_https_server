@@ -76,7 +76,7 @@ print(f'server IP > http://{get_local_ip()}:{port}')
 @app.post('/api')
 def handle_get():
     # key нужен для проверки на коректность сервера
-    return text_to_binary(str({'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}))
+    return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}
 
 # Обработка GET-запроса
 @app.get('/file')

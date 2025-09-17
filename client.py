@@ -3,10 +3,9 @@ import tpg
 
 import time
 import base64
-import traceback
 import os
-import bz2
 import json
+import traceback
 
 
 mein_ulr=input('IP server>>')
@@ -19,7 +18,7 @@ def binary_to_text(binary_str, encoding='utf-8'):
 
 
 try:
-    a=requests.get(mein_ulr)
+    a=requests.get(mein_ulr, timeout=20)
 except requests.exceptions.InvalidSchema:
     try:
         mein_ulr='http://'+mein_ulr
@@ -49,15 +48,14 @@ def ping(ping_url)->int:
 
 print(f"ping>>>{ping(url)}")
 # POST-запрос с JSON
-info_data = {'key': 'value'}
-info = requests.post(info_url, json=info_data).json()
+info = requests.post(info_url, json={'key': 'value'}).json()
 # Вывод POST-ответа
-print('info:', info ,)
+print('info: ', info )
 #проверка сервера на коректность
 if int(info['key'])>10 or int(info['key'])<0:
     print('error server key connecting')
     for i in range(5):
-        info = requests.post(info_url, json=info_data).json()
+        info = requests.post(info_url, json={'key': 'value'}).json()
         time.sleep(1)
         if info['key']>10 or info['key']<0:
             print('error server key connecting')
@@ -81,54 +79,49 @@ if file_download not in file_list:
 # 3. Загружаем файл с прогресс-баром
 SAFE_DIR = "downloads"
 os.makedirs(SAFE_DIR, exist_ok=True)
-file_path = os.path.join(SAFE_DIR, file_download)
 
-time.sleep(2)
-token=1#input("input token>>")
 
-get_url=f"{url}/{file_download}/{token}"
-download_response = requests.get(get_url, stream=True)
-#download_response.raise_for_status()
 
-#total_size = int(download_response.headers.get('Content-Length', 1))
+download_response = requests.get(url, params={'file':file_download}, stream=True)
+
+
 total_size=files[file_download]
 total_bytes=0
 num=0
-while os.path.isfile(file_path):
-    num=+1
-    file_path=f"({num}){file_path}"
+file_path = os.path.join(SAFE_DIR, file_download)
+while True:
+    if os.path.isfile(file_path):
+        num=+1
+        file_path = os.path.join(SAFE_DIR, f"({num}){file_download}")
+        
+    else:break
 
-datas=''
+
 timer=time.time()
-for chunk in download_response.iter_content(chunk_size=8192):
-    if chunk:
-        total_bytes += len(chunk)
-        percent = round(100/(total_size/total_bytes) ,2)
-        bar=int(round(percent))
-        if bar >= 100:
-            progress_bar=f'[    successfully    ] {round(time.time()-timer,1)}s. '
-        else:
-            progress_bar=f"[{'#'*bar}{' '*(20-bar)}]"
-        tpg.clear()
-        print(f"{progress_bar}{percent:.1f}% ({total_bytes} / {total_size} byte) ")
-        datas=datas+str(chunk.decode())
-        with open(file_path, 'wb') as f:
-            f.write(base64.b64decode(chunk.decode()))
-print(f"Файл {file_download} успешно загружен.")
-
-'''
-if "error" in list(json.loads(datas)).keys():
-    if json.loads(datas)["error"] == None:
-        tpg.clear()
-
-        print(f"Файл {file_download} успешно загружен.")
-    else:
-        #tpg.clear()
-        print(tpg.color(f"server response error>{json.loads(datas)["error"]}",'red'))
-else:
-    #tpg.clear()
-    print(tpg.color(f"server response error> {str(json.loads(datas))}",'red'))
-'''
+bufrer_data=''
+try:
+    for chunk in download_response.iter_content(chunk_size=8192):
+        if chunk:
+            total_bytes += len(chunk)
+            percent = round(100/(total_size/total_bytes) ,2)
+            bar=int(round( (percent/100)*20 ))
+            if bar >= 100:
+                progress_bar=f'[    successfully    ] {round(time.time()-timer,1)}s. '
+            else:
+                progress_bar=f"[{'#'*bar}{' '*(20-bar)}]"
+            tpg.clear()
+            print(f"{progress_bar}{percent:.1f}% ({total_bytes} / {total_size} byte) ")
+            bufrer_data=bufrer_data+str(chunk.decode())
+    print(bufrer_data)
+    with open(file_path, 'wb') as f:
+        f.write(base64.b64decode(bufrer_data))
+                
+    tpg.clear()
+    print(tpg.color(f"Файл {file_download} успешно загружен.", 'green'))
+    
+except Exception as e:
+    tpg.clear()
+    print(tpg.color(f"error>> {e}\n{traceback.format_exc()}", 'red'))
     
 
 

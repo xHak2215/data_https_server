@@ -1,0 +1,7 @@
+site_name: tpg
+nav:
+  - Home: README.md
+  - API Reference: https://github.com/xHak2215/tpg
+theme: readthedocs
+plugins:
+  - keyboard
