@@ -24,6 +24,7 @@ try:
     dictoru=os.path.join(os.getcwd(),settings["dictoru"])
     message=str(settings["message"])
     host_file_On_the_site=bool(settings['host_file_On_the_site'])
+
 except Exception as e: 
     print('error import settngs')
     print(f"error>> {e} \n{traceback.format_exc()}")
@@ -31,7 +32,7 @@ except Exception as e:
     dictoru=os.path.join(os.getcwd(),'file')#путь к папке с файлами
     message='hello'
     host_file_On_the_site=True# возможность качать файлы с сайта без клиента 
-    settings={"dictoru":"file"}
+    settings=None
 
 data={}
 if os.path.isdir(dictoru) != True:
@@ -48,7 +49,7 @@ def text_to_binary(text, encoding='utf-8'):
     binary_data = ''.join(format(byte, '08b') for byte in text.encode(encoding))
     return binary_data
 
-def ping(ping_url)->int:
+def ping(ping_url)->float|str:
     start_time = time.time()
     try:
         try:
@@ -74,21 +75,29 @@ print('host direktoru>>',dictoru)
 print(f'server IP > http://{get_local_ip()}:{port}')
 
 @app.post('/api')
-def handle_get():
-    # key нужен для проверки на коректность сервера
+def api():
+    # key нужен для проверки на коректность сервера (на будущее возможно добовление шифровки)
     return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}
 
 # Обработка GET-запроса
 @app.get('/file')
-async def handle_get():
+async def get_file():
     try:
         file_list = os.listdir(dictoru)
         file_sizes = {f: os.path.getsize(os.path.join(dictoru, f)) for f in file_list}
         return {"file_list": file_sizes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+if settings and settings["dictoru"]:
+    mount_dir=settings["dictoru"]
+    app.mount(mount_dir, StaticFiles(directory=mount_dir), name="file_dir")
+else:
+    if os.name == 'nt':
+        mount_dir="C:\\"
+    else:
+        mount_dir='/'
 
-app.mount('/'+settings["dictoru"], StaticFiles(directory=settings["dictoru"]), name="file_dir")
 @app.get('/', response_class=HTMLResponse)
 async def handle_get():
     if host_file_On_the_site:
@@ -105,23 +114,26 @@ async def handle_get():
                     description=f'<h3>{description_file[i]}</h3>'
                 except KeyError:
                     description='no description'
-            file_no_the_site+=f'<a href="{settings["dictoru"]}/{i}" download>Download {i}</a><br>\n{description}<br>'
-        return f"""
+            file_no_the_site=file_no_the_site+f'<a href="{os.path.join(mount_dir, i)}" download>Download {i[:150]}</a><br>\n <p>{description}</p> <br>'
+        content=f"""
+        <!DOCTYPE html>
         <html>
             <head>
                 <meta charset="UTF-8">
                 <title>server</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+                <link rel=”icon” href="favicon.ico” type=”image/x-icon”>
             </head>
             <body>
                 <h1>connect</h1>
+                <br>
+        
                 {file_no_the_site}
-
-
                 <a href="/upload">upload file</a>
             </body>
         </html>
-    """
+        """
+        return content
     else:    
         return f"""
         <html>
@@ -129,6 +141,7 @@ async def handle_get():
                 <meta charset="UTF-8">
                 <title>server</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+                <link rel=”icon” href="favicon.ico" type=”image/x-icon”>
             </head>
             <body>
                 <h1>connect </h1>
@@ -140,12 +153,13 @@ async def handle_get():
     
 @app.get("/upload", response_class=HTMLResponse)
 async def main():
-    content = """
+    content = f"""
     <html>
         <head>
             <meta charset="UTF-8">
             <title>File Upload</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+            <link rel=”icon” href="favicon.ico" type=”image/x-icon”>
         </head>
         <body>
             <h1>Upload a File</h1>
@@ -174,7 +188,7 @@ def read_data(file):
                 yield base64.b64encode(chunk).decode('utf-8')
 
 @app.get('/data')
-async def handle_get(file: str):
+async def stream_data(file: str):
     return StreamingResponse(
         read_data(file),
         media_type="application/octet-stream",
@@ -187,4 +201,8 @@ async def handle_get(file: str):
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn 
-    uvicorn.run(app, host='0.0.0.0', port=port)
+    while True:
+        try:
+            uvicorn.run(app, host='0.0.0.0', port=port)
+        except Exception as e:
+            print(f"{e}\n{traceback.format_exc()}")
