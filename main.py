@@ -34,6 +34,12 @@ except Exception as e:
     host_file_On_the_site=True# возможность качать файлы с сайта без клиента 
     settings=None
 
+local_site_style='''
+bady{
+background-color:#181a1b;
+}
+'''
+
 data={}
 if os.path.isdir(dictoru) != True:
     print('\33[31m'+f'error no {dictoru}')
@@ -122,14 +128,17 @@ async def handle_get():
                 <meta charset="UTF-8">
                 <title>server</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-                <link rel=”icon” href="favicon.ico” type=”image/x-icon”>
+                <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}” type=”image/x-icon”>
+                {local_site_style}
             </head>
             <body>
+                <hr size="6" color="gray">
                 <h1>connect</h1>
                 <br>
-        
+
                 {file_no_the_site}
-                <a href="/upload">upload file</a>
+                <hr size="5" color="gray">
+                <h3> <a href="/upload">upload file</a> </h3>
             </body>
         </html>
         """
@@ -141,7 +150,8 @@ async def handle_get():
                 <meta charset="UTF-8">
                 <title>server</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-                <link rel=”icon” href="favicon.ico" type=”image/x-icon”>
+                <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}" type=”image/x-icon”>
+                {local_site_style}
             </head>
             <body>
                 <h1>connect </h1>
@@ -159,7 +169,8 @@ async def main():
             <meta charset="UTF-8">
             <title>File Upload</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-            <link rel=”icon” href="favicon.ico" type=”image/x-icon”>
+            <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}" type=”image/x-icon”>
+            {local_site_style}
         </head>
         <body>
             <h1>Upload a File</h1>
