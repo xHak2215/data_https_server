@@ -5,6 +5,7 @@ import base64
 import random
 import json
 import traceback
+import time
 
 
 from fastapi import FastAPI, Request, File, UploadFile, HTTPException
@@ -35,9 +36,11 @@ except Exception as e:
     settings=None
 
 local_site_style='''
+<style>
 bady{
 background-color:#181a1b;
 }
+</style>
 '''
 
 data={}
@@ -151,7 +154,7 @@ async def handle_get():
                 <title>server</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
                 <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}" type=”image/x-icon”>
-                {local_site_style}
+            {local_site_style}
             </head>
             <body>
                 <h1>connect </h1>
@@ -212,8 +215,4 @@ async def stream_data(file: str):
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn 
-    while True:
-        try:
-            uvicorn.run(app, host='0.0.0.0', port=port)
-        except Exception as e:
-            print(f"{e}\n{traceback.format_exc()}")
+    uvicorn.run(app, host="192.168.0.111", port=port)
