@@ -1,6 +1,6 @@
 {
     "port":8000,
-    "dictoru":"file",
-    "message":"test message",
-    "host_file_On_the_site":true 
+    "directory":"/home/pc/Загрузки",
+    "message":"локальный сервер для обмена файломи",
+    "host_file_on_the_site":true 
 }

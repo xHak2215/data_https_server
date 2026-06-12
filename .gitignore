@@ -1,3 +1,5 @@
 cenv
 venv
-.log
+*.log
+settings.json
+description_file.json

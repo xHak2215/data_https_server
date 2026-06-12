@@ -5,7 +5,6 @@ import base64
 import random
 import json
 import traceback
-import time
 
 
 from fastapi import FastAPI, Request, File, UploadFile, HTTPException
@@ -16,42 +15,39 @@ from fastapi.responses import StreamingResponse
 import socket
 
 
-settings=''
 try:
     with open("settings.json", "r") as json_settings:
-        settings= json.load(json_settings)
-    print(settings)
-    port=int(settings['port'])
-    dictoru=os.path.join(os.getcwd(),settings["dictoru"])
-    message=str(settings["message"])
-    host_file_On_the_site=bool(settings['host_file_On_the_site'])
+        settings = json.load(json_settings)
+    port = int(settings['port'])
+    directory = os.path.join(os.getcwd(),settings["directory"])
+    message = str(settings["message"])
+    host_file_On_the_site = bool(settings['host_file_on_the_site'])
 
 except Exception as e: 
-    print('error import settngs')
+    print("error import settings")
     print(f"error>> {e} \n{traceback.format_exc()}")
-    port=8000#порт 
-    dictoru=os.path.join(os.getcwd(),'file')#путь к папке с файлами
-    message='hello'
-    host_file_On_the_site=True# возможность качать файлы с сайта без клиента 
-    settings=None
-
-local_site_style='''
-<style>
-bady{
-background-color:#181a1b;
-}
-</style>
-'''
+    port = 8000
+    directory = os.path.join(os.getcwd(),'file')#путь к папке с файлами
+    message = "hello"
+    host_file_On_the_site = True# возможность качать файлы с сайта без клиента 
+    settings = None
 
 data={}
-if os.path.isdir(dictoru) != True:
-    print('\33[31m'+f'error no {dictoru}')
+if os.path.isdir(directory) != True:
+    print(f"\33[31merror no {directory} \33[0m")
      
 # uvicorn main:app --reload
 def get_local_ip():
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
-    return local_ip
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Не важно, что эта IP не существует, нам нужен только сокет
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 def text_to_binary(text, encoding='utf-8'):
     #Преобразует текст в двоичную строку (последовательность '0' и '1')
@@ -80,32 +76,25 @@ app = FastAPI()
 class Item(BaseModel):
     key: str
     
-print('host direktoru>>',dictoru)
-print(f'server IP > http://{get_local_ip()}:{port}')
+print(f"host directory>> {directory}")
+print(f"server IP > http://{get_local_ip()}:{port}")
+
+mount_dir = os.path.join(os.getcwd(), "mount_dir")
+app.mount("/mount_dir", StaticFiles(directory = mount_dir), name = "mount_dir")
+app.mount("/files", StaticFiles(directory = directory), name = "files")
 
 @app.post('/api')
 def api():
-    # key нужен для проверки на коректность сервера (на будущее возможно добовление шифровки)
-    return {'ip':get_local_ip(),'port':port,'key':random.randint(0,10),'message':message}
+    return {'ip':get_local_ip(), 'port':port, 'message':message}
 
-# Обработка GET-запроса
 @app.get('/file')
 async def get_file():
     try:
-        file_list = os.listdir(dictoru)
-        file_sizes = {f: os.path.getsize(os.path.join(dictoru, f)) for f in file_list}
+        file_list = os.listdir(directory)
+        file_sizes = {f: os.path.getsize(os.path.join(directory, f)) for f in file_list}
         return {"file_list": file_sizes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-if settings and settings["dictoru"]:
-    mount_dir=settings["dictoru"]
-    app.mount(mount_dir, StaticFiles(directory=mount_dir), name="file_dir")
-else:
-    if os.name == 'nt':
-        mount_dir="C:\\"
-    else:
-        mount_dir='/'
 
 @app.get('/', response_class=HTMLResponse)
 async def handle_get():
@@ -117,26 +106,28 @@ async def handle_get():
                 description_file=json.load(json_settings)
         except FileNotFoundError:
             description_file=None
-        for i in os.listdir(dictoru):
+        for i in os.listdir(directory):
             if description_file is not None:
                 try:
-                    description=f'<h3>{description_file[i]}</h3>'
+                    description=f"<h3>{description_file[i]}</h3>"
                 except KeyError:
-                    description='no description'
-            file_no_the_site=file_no_the_site+f'<a href="{os.path.join(mount_dir, i)}" download>Download {i[:150]}</a><br>\n <p>{description}</p> <br>'
+                    description="no description"
+            if os.path.isfile(os.path.join(directory, i)):
+                file_no_the_site=file_no_the_site+f'<a href="files/{i}" download>Download {i[:150]}</a><br>\n <p>{description}</p> <br>'
+
         content=f"""
         <!DOCTYPE html>
         <html>
             <head>
                 <meta charset="UTF-8">
                 <title>server</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-                <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}” type=”image/x-icon”>
-                {local_site_style}
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0">
+                <link rel="stylesheet" href="/mount_dir/front/style.css">
+                <link rel=”icon” href="/mount_dir/favicon.ico" type=”image/x-icon”>
             </head>
             <body>
                 <hr size="6" color="gray">
-                <h1>connect</h1>
+                <h2>files:</h2>
                 <br>
 
                 {file_no_the_site}
@@ -146,20 +137,19 @@ async def handle_get():
         </html>
         """
         return content
-    else:    
+    else:
+        response.status_code = 403    
         return f"""
         <html>
             <head>
                 <meta charset="UTF-8">
                 <title>server</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-                <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}" type=”image/x-icon”>
-            {local_site_style}
+                <link rel="stylesheet" href="/mount_dir/front/style.css">
+                <link rel=”icon” href="/mount_dir/favicon.ico" type=”image/x-icon”>
             </head>
             <body>
-                <h1>connect </h1>
                 <h2>для скачивания файлов нужен клиент</h2>
-
             </body>
         </html>
     """
@@ -172,8 +162,8 @@ async def main():
             <meta charset="UTF-8">
             <title>File Upload</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
-            <link rel=”icon” href="{os.path.join(mount_dir, "favicon.ico")}" type=”image/x-icon”>
-            {local_site_style}
+            <link rel="stylesheet" href="/mount_dir/front/style.css">
+            <link rel=”icon” href="/mount_dir/favicon.ico" type=”image/x-icon”>
         </head>
         <body>
             <h1>Upload a File</h1>
@@ -188,14 +178,14 @@ async def main():
 
 @app.post("/uploadfile/")
 async def upload_file(file: UploadFile = File(...)):
-    file_location = os.path.join(dictoru , file.filename)
+    file_location = os.path.join(directory, file.filename)
     with open(file_location, "wb") as f:
         f.write(await file.read())
     return {"info": f"file '{file.filename}' saved at '{file_location}'"}
     
     
 def read_data(file):
-    file_path = os.path.join(dictoru, file)
+    file_path = os.path.join(directory, file)
     if os.path.isfile(file_path):
         with open(file_path, 'rb') as f:
             while chunk := f.read(4096):
@@ -212,7 +202,8 @@ async def stream_data(file: str):
         }
     )
     # {'message': file,"Content-Length": os.path.getsize(file_path) + 1}
+
 # Запуск сервера
 if __name__ == '__main__':
     import uvicorn 
-    uvicorn.run(app, host="192.168.0.111", port=port)
+    uvicorn.run(app, host=get_local_ip(), port=port)
