@@ -5,14 +5,13 @@ import base64
 import random
 import json
 import traceback
+import socket
 
 
 from fastapi import FastAPI, Request, File, UploadFile, HTTPException
 from pydantic import BaseModel
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse
-import socket
 
 
 try:
@@ -106,14 +105,30 @@ async def handle_get():
                 description_file=json.load(json_settings)
         except FileNotFoundError:
             description_file=None
+        
+        file_no_the_site=file_no_the_site+f'<a href="/cd?dir=..">←</a> <br><br>'
+
         for i in os.listdir(directory):
             if description_file is not None:
                 try:
                     description=f"<h3>{description_file[i]}</h3>"
                 except KeyError:
                     description="no description"
+            
+            button_buffer = ""
+            
             if os.path.isfile(os.path.join(directory, i)):
-                file_no_the_site=file_no_the_site+f'<a href="files/{i}" download>Download {i[:150]}</a><br>\n <p>{description}</p> <br>'
+                if i[0] != "." and "." in i:
+                    print(i)
+                    rashirenie = i.rsplit(".", 1)[1]
+                    if rashirenie in ["mp4", "m4v", "mkv", "mov", "avi", "webm", "flv", "ts", "m2ts", "mts", "3gp", "3g2", "wmv", "asf", "ogv", "mxf", "gif", "dv", "rm", "rmvb", "f4v"]:
+                        button_buffer = f'<div class="player_button"> <a href="/video_play?file={i}" class="button-like">play</a> </div>'
+                    elif rashirenie in ["aac", "mp3", "opus", "ogg", "oga", "wav", "flac", "alac", "ac3", "eac3"]:
+                        button_buffer = f'<div class="player_button"> <a href="/audio_play?file={i}" class="button-like">play</a> </div>'
+                file_no_the_site=file_no_the_site+f'<a href="files/{i}" download>Download {i[:150]}</a> {button_buffer} <br>\n <p>{description}</p> <br>'
+
+            elif os.path.isdir(os.path.join(directory, i)):
+                file_no_the_site=file_no_the_site+f'<a href="/cd?dir={i}">→ {i[:150]}</a> <br>\n <p>{description}</p> <br>'
 
         content=f"""
         <!DOCTYPE html>
@@ -176,7 +191,53 @@ async def main():
     """
     return content
 
-@app.post("/uploadfile/")
+@app.get("/video_play", response_class=HTMLResponse)
+async def video_player(file:str):
+    return f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>video player</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+            <link rel="stylesheet" href="/mount_dir/front/style.css">
+            <link rel=”icon” href="/mount_dir/favicon.ico" type=”image/x-icon”>
+        </head>
+    <body>
+    <video src="/files/{file}" controls></video>
+
+    </body>
+    </html>
+    """
+
+@app.get("/audio_play", response_class=HTMLResponse)
+async def audio_player(file:str):
+    return f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>audio player</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+            <link rel="stylesheet" href="/mount_dir/front/style.css">
+            <link rel=”icon” href="/mount_dir/favicon.ico" type=”image/x-icon”>
+        </head>
+    <body>
+    <audio controls src="/files/{file}"></audio>
+
+    </body>
+    </html>
+    """
+
+@app.get("/cd")
+async def cd_in_dir(dir:str):
+    global directory
+    if dir == "..":
+        directory = directory.rsplit("/", 1)[0]
+
+    if dir in os.listdir(directory):
+        directory = os.path.join(directory, dir) 
+    return RedirectResponse("/")
+
+@app.post("/uploadfile")
 async def upload_file(file: UploadFile = File(...)):
     file_location = os.path.join(directory, file.filename)
     with open(file_location, "wb") as f:

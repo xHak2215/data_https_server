@@ -2,3 +2,9 @@ body{
     background-color:#181a1b;
     color: #cecccc !important;
 }
+
+.player_button {
+  display: flex;
+  justify-content: center;
+  /*align-items: center;*/
+}
