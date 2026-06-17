@@ -119,13 +119,14 @@ async def handle_get():
             
             if os.path.isfile(os.path.join(directory, i)):
                 if i[0] != "." and "." in i:
-                    print(i)
                     rashirenie = i.rsplit(".", 1)[1]
-                    if rashirenie in ["mp4", "m4v", "mkv", "mov", "avi", "webm", "flv", "ts", "m2ts", "mts", "3gp", "3g2", "wmv", "asf", "ogv", "mxf", "gif", "dv", "rm", "rmvb", "f4v"]:
-                        button_buffer = f'<div class="player_button"> <a href="/video_play?file={i}" class="button-like">play</a> </div>'
+                    if rashirenie in ["mp4", "m4v", "mkv", "mov", "avi", "webm", "flv", "ts", "m2ts", "mts", "3gp", "3g2", "wmv", "asf", "ogv", "mxf", "dv", "rm", "rmvb", "f4v"]:
+                        button_buffer = f'<div class="player_button"> <a href="/video_play?file={i}" class="button-like">View</a> </div>'
                     elif rashirenie in ["aac", "mp3", "opus", "ogg", "oga", "wav", "flac", "alac", "ac3", "eac3"]:
-                        button_buffer = f'<div class="player_button"> <a href="/audio_play?file={i}" class="button-like">play</a> </div>'
-                file_no_the_site=file_no_the_site+f'<a href="files/{i}" download>Download {i[:150]}</a> {button_buffer} <br>\n <p>{description}</p> <br>'
+                        button_buffer = f'<div class="player_button"> <a href="/audio_play?file={i}" class="button-like">View</a> </div>'
+                    elif rashirenie in ["jpg", "jpeg", "jpe", "jif", "jfif", "jfi", "png", "apng", "gif", "webp", "webm", "avif", "heif", "heic", ]:
+                        button_buffer = f'<div class="player_button"> <a href="/image_view?file={i}" class="button-like">View</a> </div>'
+                file_no_the_site=file_no_the_site+f'<div class="wrap"> <a href="files/{i}" download>{i[:150]}</a> </div> <div class="right">{button_buffer}</div> <br>\n <p>{description}</p> <br>'
 
             elif os.path.isdir(os.path.join(directory, i)):
                 file_no_the_site=file_no_the_site+f'<a href="/cd?dir={i}">→ {i[:150]}</a> <br>\n <p>{description}</p> <br>'
@@ -222,6 +223,26 @@ async def audio_player(file:str):
         </head>
     <body>
     <audio controls src="/files/{file}"></audio>
+
+    </body>
+    </html>
+    """
+
+@app.get("/image_view", response_class=HTMLResponse)
+async def image_view(file:str):
+    return f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>image</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0"> 
+            <link rel="stylesheet" href="/mount_dir/front/style.css">
+            <link rel=”icon” href="/mount_dir/favicon.ico" type=”image/x-icon”>
+        </head>
+    <body>
+    <div class="image_view">
+        <img src="/files/{file}" alt="{file}" width="100%" height="100%">
+    </div>
 
     </body>
     </html>
